@@ -10,7 +10,7 @@ class McnDevice {
   UsbPort? _port;
   StreamSubscription<String>? _subscription;
   final _responseController =
-      StreamController<Map<String, dynamic>>.broadcast(); // 変更点
+      StreamController<Map<String, dynamic>>.broadcast();
   final _commandController = StreamController<String>();
 
   McnDevice();
@@ -45,7 +45,7 @@ class McnDevice {
 
     // リスナーの設定
     _subscription = _port!.inputStream
-        ?.map((data) => data.toList()) // Uint8List を List<int> に変換
+        ?.map((data) => data.toList())
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(

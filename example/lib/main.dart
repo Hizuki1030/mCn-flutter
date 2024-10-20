@@ -69,7 +69,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MCN Device Demo',
+      title: 'mCn Device Demo',
       home: Scaffold(
         appBar: AppBar(
           title: Text('MCN Device Demo'),
