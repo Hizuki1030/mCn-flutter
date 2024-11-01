@@ -72,11 +72,24 @@ class McnDevice {
   }
 
   /// 温度取得メソッド
-  Future<double> getInternalTemp() async {
+  Future<double> getTemp() async {
     Map<String, dynamic> response =
         await _sendCommandAndAwaitResponse({"command": "getTemp"});
     if (response.containsKey("temp")) {
       return response["temp"].toDouble();
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
+  }
+
+  /// 温度取得メソッド
+  Future<double> getCO2() async {
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getCO2"});
+    if (response.containsKey("co2")) {
+      return response["co2"].toDouble();
     } else if (response.containsKey("error")) {
       throw Exception("Error from device: ${response["error"]}");
     } else {
