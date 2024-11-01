@@ -87,12 +87,12 @@ class McnDevice {
   }
 
   /// CO2取得メソッド
-  Future<double> getCO2() async {
-    return await _sendCommandAndAwaitResponse<double>(
+  Future<int> getCO2() async {
+    return await _sendCommandAndAwaitResponse<int>(
       "getCO2",
       (response) {
         if (response.containsKey("co2")) {
-          return response["co2"].toDouble();
+          return response["co2"].toInt();
         } else {
           throw Exception("Unexpected response structure.");
         }
