@@ -146,7 +146,7 @@ class McnDevice {
 
     // タイムアウト設定
     try {
-      return await completer.future.timeout(Duration(seconds: 5));
+      return await completer.future.timeout(Duration(seconds: 10));
     } on TimeoutException {
       subscription?.cancel();
       throw Exception("Timeout waiting for device response.");
