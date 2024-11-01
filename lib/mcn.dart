@@ -52,7 +52,6 @@ class McnDevice {
       _handleIncomingData,
       onError: (e) {
         print("Error in input stream: $e");
-        _responseController.add({"error": "Input stream error: $e"});
       },
     );
 
@@ -73,87 +72,74 @@ class McnDevice {
   }
 
   /// 温度取得メソッド
-  Future<double> getTemp() async {
-    return await _sendCommandAndAwaitResponse<double>(
-      "getTemp",
-      (response) {
-        if (response.containsKey("temp")) {
-          return response["temp"].toDouble();
-        } else {
-          throw Exception("Unexpected response structure.");
-        }
-      },
-    );
-  }
-
-  /// CO2取得メソッド
-  Future<int> getCO2() async {
-    return await _sendCommandAndAwaitResponse<int>(
-      "getCO2",
-      (response) {
-        if (response.containsKey("co2")) {
-          return response["co2"].toInt();
-        } else {
-          throw Exception("Unexpected response structure.");
-        }
-      },
-    );
+  Future<double> getInternalTemp() async {
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getTemp"});
+    if (response.containsKey("temp")) {
+      return response["temp"].toDouble();
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
   }
 
   /// デバイス情報取得メソッド
   Future<Map<String, dynamic>> getMcnInfo() async {
-    return await _sendCommandAndAwaitResponse<Map<String, dynamic>>(
-      "getMcnInfo",
-      (response) {
-        if (response.containsKey("deviceVersion") &&
-            response.containsKey("firmwareType")) {
-          return {
-            "deviceVersion": response["deviceVersion"],
-            "firmwareType": response["firmwareType"],
-          };
-        } else {
-          throw Exception("Unexpected response structure.");
-        }
-      },
-    );
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getMcnInfo"});
+    if (response.containsKey("deviceVersion") &&
+        response.containsKey("firmwareType")) {
+      return {
+        "deviceVersion": response["deviceVersion"],
+        "firmwareType": response["firmwareType"],
+      };
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
   }
 
-  /// コマンド送信とレスポンス待機（ジェネリック化）
-  Future<T> _sendCommandAndAwaitResponse<T>(
-      String command, T Function(Map<String, dynamic>) parser) async {
-    Completer<T> completer = Completer();
+  /// コマンド送信とレスポンス待機
+  Future<Map<String, dynamic>> _sendCommandAndAwaitResponse(
+      Map<String, dynamic> command) {
+    Completer<Map<String, dynamic>> completer = Completer();
     StreamSubscription<Map<String, dynamic>>? subscription;
 
     subscription = _responseController.stream.listen((response) {
       if (response.containsKey("error")) {
-        completer.completeError(
-            Exception("Error from device: ${response["error"]}"));
-        subscription?.cancel();
-      } else {
-        try {
-          T result = parser(response);
-          completer.complete(result);
-          subscription?.cancel();
-        } catch (e) {
-          completer.completeError(e);
-          subscription?.cancel();
-        }
+        completer.complete(response);
+      } else if (command["command"] == "getTemp" &&
+          response.containsKey("temp")) {
+        completer.complete(response);
+      } else if (command["command"] == "getMcnInfo" &&
+          response.containsKey("deviceVersion")) {
+        completer.complete(response);
       }
+      subscription?.cancel();
     });
 
     // コマンド送信
-    _commandController.add(command);
+    String jsonCommand = jsonEncode(command);
+    _commandController.add(jsonCommand);
 
     // タイムアウト設定
-    try {
-      return await completer.future.timeout(Duration(seconds: 10));
-    } on TimeoutException {
+    completer.future.timeout(Duration(seconds: 5), onTimeout: () {
       subscription?.cancel();
-      throw Exception("Timeout waiting for device response.");
-    } catch (e) {
-      subscription?.cancel();
-      rethrow;
-    }
+      return {"error": "Timeout waiting for device response."};
+    }).then((value) {
+      if (!completer.isCompleted) {
+        completer.complete(value);
+      }
+    }).catchError((e) {
+      // 予期せぬエラーの処理
+      if (!completer.isCompleted) {
+        completer.complete({"error": "Unknown error: $e"});
+      }
+    });
+
+    return completer.future;
   }
 
   /// コマンドの送信
@@ -170,7 +156,7 @@ class McnDevice {
       _responseController.add(jsonResponse);
     } catch (e) {
       print("Failed to decode JSON: $e");
-      // エラーレスポンスとして扱う
+      // エラーレスポンスとして扱う場合
       _responseController.add({"error": "Invalid JSON format"});
     }
   }
