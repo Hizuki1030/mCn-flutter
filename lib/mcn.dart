@@ -127,6 +127,27 @@ class McnDevice {
     }
   }
 
+  /// co2センサー全情報取得メソッド
+  Future<Map<String, dynamic>> getCo2SensorAllValue() async {
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getCo2SensorValue"});
+    if (response.containsKey("temp") &&
+        response.containsKey("co2") &&
+        response.containsKey("humidity")) {
+      return {
+        "temp": response["temp"].toDouble(),
+        "co2": response["co2"].toInt(),
+        "humidity": response["humidity"].toDouble(),
+      };
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
+  }
+
+  /// 速度指定
+
   /// コマンド送信とレスポンス待機
   Future<Map<String, dynamic>> _sendCommandAndAwaitResponse(
       Map<String, dynamic> command) {
@@ -134,8 +155,10 @@ class McnDevice {
     StreamSubscription<Map<String, dynamic>>? subscription;
 
     subscription = _responseController.stream.listen((response) {
-      completer.complete(response);
-      subscription?.cancel();
+      if (!completer.isCompleted) {
+        completer.complete(response);
+        subscription?.cancel();
+      }
     });
 
     // コマンド送信
@@ -144,12 +167,11 @@ class McnDevice {
 
     // タイムアウト設定
     completer.future.timeout(Duration(seconds: 5), onTimeout: () {
+      if (!completer.isCompleted) {
+        completer.complete({"error": "Timeout waiting for device response."});
+      }
       subscription?.cancel();
       return {"error": "Timeout waiting for device response."};
-    }).then((value) {
-      if (!completer.isCompleted) {
-        completer.complete(value);
-      }
     }).catchError((e) {
       // 予期せぬエラーの処理
       if (!completer.isCompleted) {
