@@ -84,12 +84,25 @@ class McnDevice {
     }
   }
 
-  /// 温度取得メソッド
+  /// CO2取得メソッド
   Future<int> getCO2() async {
     Map<String, dynamic> response =
         await _sendCommandAndAwaitResponse({"command": "getCO2"});
     if (response.containsKey("co2")) {
       return response["co2"].toInt();
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
+  }
+
+  /// 湿度取得メソッド
+  Future<double> getHumidity() async {
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getHumidity"});
+    if (response.containsKey("humidity")) {
+      return response["humidity"].toDouble();
     } else if (response.containsKey("error")) {
       throw Exception("Error from device: ${response["error"]}");
     } else {
