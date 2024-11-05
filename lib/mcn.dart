@@ -72,11 +72,24 @@ class McnDevice {
   }
 
   /// 温度取得メソッド
-  Future<double> getInternalTemp() async {
+  Future<double> getTemp() async {
     Map<String, dynamic> response =
         await _sendCommandAndAwaitResponse({"command": "getTemp"});
     if (response.containsKey("temp")) {
       return response["temp"].toDouble();
+    } else if (response.containsKey("error")) {
+      throw Exception("Error from device: ${response["error"]}");
+    } else {
+      throw Exception("Unexpected response from device.");
+    }
+  }
+
+  /// 温度取得メソッド
+  Future<int> getCO2() async {
+    Map<String, dynamic> response =
+        await _sendCommandAndAwaitResponse({"command": "getCO2"});
+    if (response.containsKey("co2")) {
+      return response["co2"].toInt();
     } else if (response.containsKey("error")) {
       throw Exception("Error from device: ${response["error"]}");
     } else {
@@ -108,15 +121,7 @@ class McnDevice {
     StreamSubscription<Map<String, dynamic>>? subscription;
 
     subscription = _responseController.stream.listen((response) {
-      if (response.containsKey("error")) {
-        completer.complete(response);
-      } else if (command["command"] == "getTemp" &&
-          response.containsKey("temp")) {
-        completer.complete(response);
-      } else if (command["command"] == "getMcnInfo" &&
-          response.containsKey("deviceVersion")) {
-        completer.complete(response);
-      }
+      completer.complete(response);
       subscription?.cancel();
     });
 

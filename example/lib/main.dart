@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _getTemperature() async {
     try {
-      double temp = await _mcnDevice.getInternalTemp();
+      double temp = await _mcnDevice.getTemp();
       setState(() {
         _temperature = "$temp °C";
       });
