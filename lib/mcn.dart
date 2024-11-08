@@ -170,6 +170,52 @@ class McnDevice {
     }
   }
 
+  /// 水ポンプの設定メソッド
+  Future<void> setMotor0Speed(int value) async {
+    if (value < 0 && value > 360) {
+      throw ArgumentError("Invalid value for setMotor0Speed");
+    }
+
+    // Construct the command map
+    Map<String, dynamic> command = {
+      "command": "setMotor0Speed",
+      "value": value,
+    };
+
+    try {
+      // Send the command and await the response
+      Map<String, dynamic> response =
+          await _sendCommandAndAwaitResponse(command);
+    } catch (e) {
+      // Handle any exceptions that occur during the process
+      print("Failed to set motor speed: $e");
+      rethrow;
+    }
+  }
+
+  /// 水ポンプの設定メソッド
+  Future<void> setMotor1Speed(int value) async {
+    if (value < 0 && value > 360) {
+      throw ArgumentError("Invalid value for setMotor0Speed");
+    }
+
+    // Construct the command map
+    Map<String, dynamic> command = {
+      "command": "setMotor1Speed",
+      "value": value,
+    };
+
+    try {
+      // Send the command and await the response
+      Map<String, dynamic> response =
+          await _sendCommandAndAwaitResponse(command);
+    } catch (e) {
+      // Handle any exceptions that occur during the process
+      print("Failed to set motor speed: $e");
+      rethrow;
+    }
+  }
+
   /// コマンド送信とレスポンス待機
   Future<Map<String, dynamic>> _sendCommandAndAwaitResponse(
       Map<String, dynamic> command) {
