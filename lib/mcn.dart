@@ -146,7 +146,41 @@ class McnDevice {
     }
   }
 
-  /// 速度指定
+  /// 水ポンプの設定メソッド
+  Future<void> setWaterPump(int value) async {
+    // Validate the input value if necessary
+    if (value != 0 && value != 1) {
+      throw ArgumentError("Invalid value for setWaterPump. Use 0 or 1.");
+    }
+
+    // Construct the command map
+    Map<String, dynamic> command = {
+      "command": "setWaterPump",
+      "value": value,
+    };
+
+    try {
+      // Send the command and await the response
+      Map<String, dynamic> response =
+          await _sendCommandAndAwaitResponse(command);
+
+      // Handle the response
+      if (response.containsKey("success") && response["success"] == true) {
+        // Command was successful
+        print("Water pump set successfully.");
+      } else if (response.containsKey("error")) {
+        // Device returned an error
+        throw Exception("Error from device: ${response["error"]}");
+      } else {
+        // Unexpected response format
+        throw Exception("Unexpected response from device.");
+      }
+    } catch (e) {
+      // Handle any exceptions that occur during the process
+      print("Failed to set water pump: $e");
+      rethrow;
+    }
+  }
 
   /// コマンド送信とレスポンス待機
   Future<Map<String, dynamic>> _sendCommandAndAwaitResponse(
